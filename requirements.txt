@@ -8,4 +8,4 @@ opencv-python-headless
 gunicorn
 sqlalchemy
 psycopg2-binary
-passlib[bcrypt]
+bcrypt
