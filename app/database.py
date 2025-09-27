@@ -12,10 +12,9 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 DB_PORT = "5432"
 
-# FIX: Use the pg8000 driver and prefer SSL
-# This tells SQLAlchemy to use the new library we installed.
+# FIX: Use the pg8000 driver and REMOVE the unsupported sslmode parameter
 SQLALCHEMY_DATABASE_URL = (
-    f"postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=prefer"
+    f"postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
