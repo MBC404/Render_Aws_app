@@ -7,5 +7,5 @@ numpy
 opencv-python-headless
 gunicorn
 sqlalchemy
-psycopg2-binary
 bcrypt
+pg8000

@@ -6,16 +6,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 # --- Database Connection ---
-# Read credentials from environment variables set by the cloud provider
 DB_HOST = os.environ.get("DB_HOST")
 DB_NAME = os.environ.get("DB_NAME")
 DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
-DB_PORT = "5432" # Default PostgreSQL port
+DB_PORT = "5432"
 
-# Create the database connection URL with the NEW SSL fix
+# FIX: Use the pg8000 driver and prefer SSL
+# This tells SQLAlchemy to use the new library we installed.
 SQLALCHEMY_DATABASE_URL = (
-    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=prefer"
+    f"postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=prefer"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
