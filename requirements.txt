@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+ultralytics
+pillow
+python-multipart
+numpy
+opencv-python-headless
+gunicorn
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
