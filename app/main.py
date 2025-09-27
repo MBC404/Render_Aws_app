@@ -1,17 +1,13 @@
-import io
+# The NEW lightweight app/main.py for Render
+
 import os
 import secrets
-import cv2
-import numpy as np
-import bcrypt # <-- Import the new library
-from fastapi import FastAPI, File, Form, Request, UploadFile, Depends
-from fastapi.responses import RedirectResponse, Response
+import bcrypt
+from fastapi import FastAPI, Form, Request, Depends
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from PIL import Image
-from ultralytics import YOLO
 from sqlalchemy.orm import Session
-# from passlib.context import CryptContext <-- We don't need this anymore
 
 # Import the database setup
 from . import database
@@ -19,28 +15,18 @@ from . import database
 # --- Application Setup ---
 app = FastAPI()
 database.create_tables()
-
-# --- We don't need pwd_context anymore ---
-
-# --- In-Memory Session Storage ---
 SESSION_STORE = {}
 
-# --- Path and Model Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(BASE_DIR)
-model_path = os.path.join(project_root, "best.pt")
-model = YOLO(model_path)
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 
-# --- Helper Functions for new password hashing ---
+# --- Helper Functions for password hashing ---
 def verify_password(plain_password, hashed_password):
-    # Passwords are stored as bytes, so we encode them
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def get_password_hash(password):
-    # Hash the password and store it as a string
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
@@ -60,27 +46,22 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
         return user
     return None
 
-# --- Routes (Keep home and predict as they were) ---
+# --- Routes ---
 @app.get("/")
 def home(request: Request, user: database.User = Depends(get_current_user)):
     if not user:
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("index.html", {"request": request, "username": user.username})
+    
+    # This is the URL of your separate prediction service (e.g., on Hugging Face)
+    prediction_service_url = "https://YOUR_USERNAME-YOUR_SPACE_NAME.hf.space" 
+    
+    return templates.TemplateResponse("index.html", {
+        "request": request, 
+        "username": user.username,
+        "prediction_url": prediction_service_url
+    })
 
-@app.post("/predict")
-async def predict(file: UploadFile = File(...), user: database.User = Depends(get_current_user)):
-    if not user:
-        return Response("Unauthorized", status_code=401)
-    contents = await file.read()
-    pil_image = Image.open(io.BytesIO(contents))
-    results = model.predict(pil_image)
-    result = results[0]
-    output_image_np = result.plot()
-    output_image_bgr = cv2.cvtColor(output_image_np, cv2.COLOR_RGB2BGR)
-    _, buffer = cv2.imencode(".jpg", output_image_bgr)
-    return Response(content=buffer.tobytes(), media_type="image/jpeg")
-
-# --- UPDATED LOGIN AND SIGNUP ROUTES ---
+# (All your login, signup, and logout functions remain exactly the same)
 @app.get("/login")
 def login_get(request: Request):
     success_message = request.query_params.get('success')
@@ -89,7 +70,6 @@ def login_get(request: Request):
 @app.post("/login")
 async def login_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...)):
     user = db.query(database.User).filter(database.User.username == username).first()
-    # Use the new verify_password function
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid username or password"})
     
@@ -113,7 +93,6 @@ async def signup_post(request: Request, db: Session = Depends(get_db), username:
     if db_user:
         return templates.TemplateResponse("signup.html", {"request": request, "error": "User already exists. Please login."})
     
-    # Use the new get_password_hash function (no need to truncate)
     hashed_password = get_password_hash(password)
     new_user = database.User(username=username, hashed_password=hashed_password)
     db.add(new_user)
