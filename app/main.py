@@ -45,47 +45,53 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(request: Request):
+def get_current_user(request: Request, db: Session = Depends(get_db)):
     session_id = request.cookies.get("session_id")
-    if session_id in SESSION_STORE:
-        return SESSION_STORE[session_id].get("username")
+    if session_id and session_id in SESSION_STORE:
+        username = SESSION_STORE[session_id]
+        user = db.query(database.User).filter(database.User.username == username).first()
+        return user
     return None
 
 # --- Routes ---
 @app.get("/")
-def home(request: Request, username: str = Depends(get_current_user)):
-    if username:
-        return templates.TemplateResponse("index.html", {"request": request, "username": username})
-    return RedirectResponse("/login", status_code=303)
+def home(request: Request, user: database.User = Depends(get_current_user)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    return templates.TemplateResponse("index.html", {"request": request, "username": user.username})
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), username: str = Depends(get_current_user)):
-    if not username:
-        return RedirectResponse("/login", status_code=303)
+async def predict(file: UploadFile = File(...), user: database.User = Depends(get_current_user)):
+    if not user:
+        return Response("Unauthorized", status_code=401)
+
     contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    results = model(img)
-    annotated_img_array = results[0].plot()
-    annotated_img_rgb = cv2.cvtColor(annotated_img_array, cv2.COLOR_BGR2RGB)
-    im = Image.fromarray(annotated_img_rgb)
-    with io.BytesIO() as buf:
-        im.save(buf, format='JPEG')
-        image_bytes = buf.getvalue()
-    return Response(content=image_bytes, media_type="image/jpeg")
+    pil_image = Image.open(io.BytesIO(contents))
+    
+    results = model.predict(pil_image)
+    result = results[0]
+    
+    output_image_np = result.plot()
+    output_image_bgr = cv2.cvtColor(output_image_np, cv2.COLOR_RGB2BGR)
+
+    _, buffer = cv2.imencode(".jpg", output_image_bgr)
+    
+    return Response(content=buffer.tobytes(), media_type="image/jpeg")
 
 @app.get("/login")
 def login_get(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": request.query_params.get('error'), "success": request.query_params.get('success')})
+    success_message = request.query_params.get('success')
+    return templates.TemplateResponse("login.html", {"request": request, "success": success_message, "error": request.query_params.get('error')})
 
 @app.post("/login")
 async def login_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...)):
     user = db.query(database.User).filter(database.User.username == username).first()
     if not user or not pwd_context.verify(password, user.hashed_password):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid username or password"})
-
+    
     session_id = secrets.token_hex(16)
-    SESSION_STORE[session_id] = {"username": username}
+    SESSION_STORE[session_id] = user.username
+    
     response = RedirectResponse("/", status_code=303)
     response.set_cookie(key="session_id", value=session_id, httponly=True)
     return response
@@ -103,7 +109,8 @@ async def signup_post(request: Request, db: Session = Depends(get_db), username:
     if db_user:
         return templates.TemplateResponse("signup.html", {"request": request, "error": "User already exists. Please login."})
     
-    hashed_password = pwd_context.hash(password)
+    # FIX: Truncate password to 72 bytes before hashing for bcrypt compatibility
+    hashed_password = pwd_context.hash(password[:72])
     new_user = database.User(username=username, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
@@ -114,8 +121,9 @@ async def signup_post(request: Request, db: Session = Depends(get_db), username:
 @app.get("/logout")
 def logout(request: Request):
     session_id = request.cookies.get("session_id")
-    if session_id and session_id in SESSION_STORE:
+    if session_id in SESSION_STORE:
         del SESSION_STORE[session_id]
+    
     response = RedirectResponse("/login", status_code=303)
-    response.delete_cookie(key="session_id")
+    response.delete_cookie("session_id")
     return response
