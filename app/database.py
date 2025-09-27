@@ -5,15 +5,17 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-# --- Database Connection (PostgreSQL for Production) ---
+# --- Database Connection ---
+# Read credentials from environment variables set by the cloud provider
 DB_HOST = os.environ.get("DB_HOST")
 DB_NAME = os.environ.get("DB_NAME")
 DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
-DB_PORT = "5432"
+DB_PORT = "5432" # Default PostgreSQL port
 
+# Create the database connection URL with the SSL fix
 SQLALCHEMY_DATABASE_URL = (
-    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -27,5 +29,6 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
+# This function is used by the main app to create the table
 def create_tables():
     Base.metadata.create_all(bind=engine)
