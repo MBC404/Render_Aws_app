@@ -21,14 +21,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
-
 # --- Helper Functions for password hashing ---
 def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def get_password_hash(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
 
 # --- Dependencies ---
 def get_db():
@@ -52,8 +50,8 @@ def home(request: Request, user: database.User = Depends(get_current_user)):
     if not user:
         return RedirectResponse("/login", status_code=303)
     
-    # This is the URL of your separate prediction service (e.g., on Hugging Face)
-    prediction_service_url = "https://YOUR_USERNAME-YOUR_SPACE_NAME.hf.space" 
+    # You can replace this with the URL to your prediction service later
+    prediction_service_url = "https://huggingface.co/spaces/pytorch/YOLOv8" 
     
     return templates.TemplateResponse("index.html", {
         "request": request, 
@@ -61,7 +59,6 @@ def home(request: Request, user: database.User = Depends(get_current_user)):
         "prediction_url": prediction_service_url
     })
 
-# (All your login, signup, and logout functions remain exactly the same)
 @app.get("/login")
 def login_get(request: Request):
     success_message = request.query_params.get('success')

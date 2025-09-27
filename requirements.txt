@@ -1,8 +1,8 @@
 fastapi
 uvicorn
-python-multipart
-numpy
 gunicorn
 sqlalchemy
 bcrypt
 pg8000
+jinja2
+python-multipart
