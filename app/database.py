@@ -13,9 +13,9 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 DB_PORT = "5432" # Default PostgreSQL port
 
-# Create the database connection URL with the SSL fix
+# Create the database connection URL with the NEW SSL fix
 SQLALCHEMY_DATABASE_URL = (
-    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
+    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=prefer"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
