@@ -14,7 +14,7 @@ from . import database
 # --- Application Setup ---
 app = FastAPI()
 database.create_tables()
-SESSION_STORE = {}
+SESSION_STORE = {} # A simple in-memory store for user sessions
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -48,19 +48,11 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
 def home(request: Request, user: database.User = Depends(get_current_user)):
     if not user:
         return RedirectResponse("/login", status_code=303)
-    
-    # IMPORTANT: Replace this with the URL of your Hugging Face Space
-    prediction_service_url = "https://YOUR-HUGGING-FACE-SPACE-URL" 
-    
-    return templates.TemplateResponse("index.html", {
-        "request": request, 
-        "username": user.username,
-        "prediction_url": prediction_service_url
-    })
+    return templates.TemplateResponse("index.html", {"request": request, "username": user.username})
 
 @app.get("/login")
 def login_get(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": request.query_params.get('error')})
+    return templates.TemplateResponse("login.html", {"request": request, "error": request.query_params.get('error'), "success": request.query_params.get('success')})
 
 @app.post("/login")
 async def login_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...)):
@@ -82,7 +74,7 @@ def signup_get(request: Request):
 async def signup_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...)):
     db_user = db.query(database.User).filter(database.User.username == username).first()
     if db_user:
-        return templates.TemplateResponse("signup.html", {"request": request, "error": "User already exists."})
+        return templates.TemplateResponse("signup.html", {"request": request, "error": "Username already exists."})
     
     hashed_password = get_password_hash(password)
     new_user = database.User(username=username, hashed_password=hashed_password)
@@ -90,7 +82,7 @@ async def signup_post(request: Request, db: Session = Depends(get_db), username:
     db.commit()
     db.refresh(new_user)
     
-    return RedirectResponse("/login", status_code=303)
+    return RedirectResponse("/login?success=Signup successful! Please login.", status_code=303)
 
 @app.get("/logout")
 def logout(request: Request):
