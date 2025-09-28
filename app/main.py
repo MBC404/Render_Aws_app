@@ -44,7 +44,7 @@ def home(request: Request, user: database.User = Depends(get_current_user)):
     if not user:
         return RedirectResponse("/login", status_code=303)
 
-    prediction_service_url = "https://huggingface.co/spaces/pytorch/YOLOv8"
+    prediction_service_url = "https://huggingface.co/spaces/MBC404/Predictor"
 
     return templates.TemplateResponse("index.html", {
         "request": request,
