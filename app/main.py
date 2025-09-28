@@ -1,4 +1,4 @@
-# The NEW lightweight app/main.py for Render
+# app/main.py
 
 import os
 import secrets
@@ -9,7 +9,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-# Import the database setup
 from . import database
 
 # --- Application Setup ---
@@ -21,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
-# --- Helper Functions for password hashing ---
+# --- Helper Functions for Passwords ---
 def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
@@ -50,8 +49,8 @@ def home(request: Request, user: database.User = Depends(get_current_user)):
     if not user:
         return RedirectResponse("/login", status_code=303)
     
-    # You can replace this with the URL to your prediction service later
-    prediction_service_url = "https://huggingface.co/spaces/pytorch/YOLOv8" 
+    # IMPORTANT: Replace this with the URL of your Hugging Face Space
+    prediction_service_url = "https://YOUR-HUGGING-FACE-SPACE-URL" 
     
     return templates.TemplateResponse("index.html", {
         "request": request, 
@@ -61,8 +60,7 @@ def home(request: Request, user: database.User = Depends(get_current_user)):
 
 @app.get("/login")
 def login_get(request: Request):
-    success_message = request.query_params.get('success')
-    return templates.TemplateResponse("login.html", {"request": request, "success": success_message, "error": request.query_params.get('error')})
+    return templates.TemplateResponse("login.html", {"request": request, "error": request.query_params.get('error')})
 
 @app.post("/login")
 async def login_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...)):
@@ -72,7 +70,6 @@ async def login_post(request: Request, db: Session = Depends(get_db), username: 
     
     session_id = secrets.token_hex(16)
     SESSION_STORE[session_id] = user.username
-    
     response = RedirectResponse("/", status_code=303)
     response.set_cookie(key="session_id", value=session_id, httponly=True)
     return response
@@ -82,13 +79,10 @@ def signup_get(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request, "error": request.query_params.get('error')})
 
 @app.post("/signup")
-async def signup_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...), confirm_password: str = Form(...)):
-    if password != confirm_password:
-        return templates.TemplateResponse("signup.html", {"request": request, "error": "Passwords do not match"})
-    
+async def signup_post(request: Request, db: Session = Depends(get_db), username: str = Form(...), password: str = Form(...)):
     db_user = db.query(database.User).filter(database.User.username == username).first()
     if db_user:
-        return templates.TemplateResponse("signup.html", {"request": request, "error": "User already exists. Please login."})
+        return templates.TemplateResponse("signup.html", {"request": request, "error": "User already exists."})
     
     hashed_password = get_password_hash(password)
     new_user = database.User(username=username, hashed_password=hashed_password)
@@ -96,7 +90,7 @@ async def signup_post(request: Request, db: Session = Depends(get_db), username:
     db.commit()
     db.refresh(new_user)
     
-    return RedirectResponse("/login?success=Signup successful! Please login.", status_code=303)
+    return RedirectResponse("/login", status_code=303)
 
 @app.get("/logout")
 def logout(request: Request):
