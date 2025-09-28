@@ -14,7 +14,7 @@ from . import database
 # --- Application Setup ---
 app = FastAPI()
 database.create_tables()
-SESSION_STORE = {} # A simple in-memory store for user sessions
+SESSION_STORE = {} # A simple in-memory store for user sessions.
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -48,7 +48,7 @@ def home(request: Request, user: database.User = Depends(get_current_user)):
     if not user:
         return RedirectResponse("/login", status_code=303)
     
-    # IMPORTANT: Replace this with the URL of your Hugging Face Space later
+    # You can replace this placeholder with your real Hugging Face URL later
     prediction_service_url = "https://huggingface.co/spaces/pytorch/YOLOv8" 
     
     return templates.TemplateResponse("index.html", {

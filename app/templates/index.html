@@ -12,8 +12,7 @@
         .container { text-align: center; padding: 100px 40px; }
         .container h2 { font-size: 36px; margin-bottom: 10px; }
         .container p { font-size: 18px; color: #666; margin-bottom: 40px; }
-        .predict-button { display: inline-block; padding: 15px 35px; background-color: #28a745; color: white; text-decoration: none; font-size: 18px; font-weight: 600; border-radius: 5px; transition: background-color 0.3s, transform 0.2s; }
-        .predict-button:hover { background-color: #218838; transform: translateY(-2px); }
+        .predict-button { display: inline-block; padding: 15px 35px; background-color: #28a745; color: white; text-decoration: none; font-size: 18px; font-weight: 600; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -26,7 +25,7 @@
     </div>
     <div class="container">
         <h2>Authentication Successful</h2>
-        <p>This is your dashboard. You can now proceed to the external prediction service.</p>
+        <p>You can now proceed to the external prediction service.</p>
         <a href="{{ prediction_url }}" class="predict-button" target="_blank">Go to Prediction Tool</a>
     </div>
 </body>
