@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Hardcoded PostgreSQL URL (replace with your actual credentials)
-DATABASE_URL = "postgres://u:tkUtjzIbGmH8TvQfHuWvDiXM9ziSScno@dpg-d3cckmqdbo4c73e2b2s0-a:5432/postres_9ym9"
+DATABASE_URL = "postgresql+psycopg2://u:tkUtjzIbGmH8TvQfHuWvDiXM9ziSScno@dpg-d3cckmqdbo4c73e2b2s0-a:5432/postres_9ym9"
 
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
