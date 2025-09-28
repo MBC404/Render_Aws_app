@@ -1,14 +1,21 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-import os
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# Hardcoded PostgreSQL URL (replace with your actual credentials)
+DATABASE_URL = "postgres://u:tkUtjzIbGmH8TvQfHuWvDiXM9ziSScno@dpg-d3cckmqdbo4c73e2b2s0-a:5432/postres_9ym9"
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_size=2,
-    max_overflow=0,
-    connect_args={"ssl": True}  # required for Render Postgres
-)
+engine = create_engine(DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+
+def create_tables():
+    Base.metadata.create_all(bind=engine)
+
+# Automatically create tables when this module is imported
+create_tables()
